@@ -6,83 +6,132 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
-    <title>WebAR Experience | khalid bawidan</title>
+    <title>WebAR | khalid bawidan</title>
     <link rel="stylesheet" href="style.css">
 
-    <!--
-        A-Frame 1.4.2  +  AR.js 3.4.5 (raw.githack — most reliable host for AR.js)
-        jsdelivr sometimes serves a broken/cached bundle; raw.githack is safer.
-    -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/3.4.5/aframe/build/aframe-ar.js"></script>
 
     <script>
-        /*
-         * MOBILE CAMERA FIX
-         * AR.js injects a <video> element. On many Android/iOS devices it
-         * does not set "playsinline" which causes the camera to stall or
-         * show a black screen (especially on iOS Safari).
-         * We patch it immediately after the DOM is ready.
+        /**
+         * ─────────────────────────────────────────────────────────────
+         *  DEFINITIVE MOBILE CAMERA FIX
+         *
+         *  Root cause: AR.js creates a <video> element with hardcoded
+         *  inline pixel dimensions (e.g. style="width:640px;height:480px").
+         *  Inline styles beat stylesheet rules, so CSS alone cannot fix this.
+         *  We use requestAnimationFrame (~60fps) for the first 6 seconds to
+         *  catch and override those styles immediately after AR.js sets them.
+         *  After that, a permanent ResizeObserver keeps the video fullscreen
+         *  even when the user rotates the device.
+         *
+         *  Secondary fix: renderer alpha:true makes the WebGL canvas
+         *  transparent so the camera feed shows through it.
+         * ─────────────────────────────────────────────────────────────
          */
-        document.addEventListener('DOMContentLoaded', function () {
-            var scene = document.querySelector('a-scene');
+        (function () {
+            var deadline = Date.now() + 6000;   // run at 60fps for 6 seconds
+            var resizeObserver = null;
 
-            scene.addEventListener('loaded', function () {
-                var video = document.querySelector('video');
-                if (video) {
-                    video.setAttribute('playsinline', '');
-                    video.setAttribute('webkit-playsinline', '');
-                    video.setAttribute('muted', '');
-                    video.play().catch(function(e) { console.warn('Video play failed:', e); });
+            function applyVideoStyles(v) {
+                v.setAttribute('playsinline', '');
+                v.setAttribute('webkit-playsinline', '');
+                v.setAttribute('muted', '');
+                v.style.cssText = [
+                    'position:fixed',
+                    'top:0',
+                    'left:0',
+                    'width:100vw',
+                    'height:100vh',
+                    'min-width:100%',
+                    'min-height:100%',
+                    'object-fit:cover',
+                    'z-index:0',
+                    'transform:none',
+                    'margin:0',
+                    'padding:0'
+                ].join('!important;') + '!important';
+
+                v.play().catch(function () {});
+
+                // Keep it fullscreen after device rotation
+                if (window.ResizeObserver && !resizeObserver) {
+                    resizeObserver = new ResizeObserver(function () {
+                        v.style.setProperty('width',  window.innerWidth  + 'px', 'important');
+                        v.style.setProperty('height', window.innerHeight + 'px', 'important');
+                    });
+                    resizeObserver.observe(document.body);
                 }
+            }
+
+            function applyCanvasStyles(c) {
+                c.style.cssText = [
+                    'position:fixed',
+                    'top:0',
+                    'left:0',
+                    'width:100vw',
+                    'height:100vh',
+                    'z-index:1'
+                ].join('!important;') + '!important';
+            }
+
+            function tick() {
+                var videos  = document.querySelectorAll('video');
+                var canvases = document.querySelectorAll('canvas');
+                videos.forEach(applyVideoStyles);
+                canvases.forEach(applyCanvasStyles);
+
+                if (Date.now() < deadline) {
+                    requestAnimationFrame(tick);
+                }
+            }
+
+            // Start as early as possible
+            document.addEventListener('DOMContentLoaded', function () {
+                requestAnimationFrame(tick);
             });
-        });
+        })();
     </script>
 </head>
 
 <body>
-    <!--
-        Minimal arjs config for Hiro (pattern marker):
-        - No detectionMode → default handles pattern markers correctly
-        - No sourceWidth/Height → device chooses what it can support
-        - debugUIEnabled: false → clean screen
-    -->
     <a-scene
         embedded
         arjs="sourceType: webcam; debugUIEnabled: false;"
-        renderer="antialias: false; logarithmicDepthBuffer: true;"
+        renderer="alpha: true; antialias: false; logarithmicDepthBuffer: true;"
         vr-mode-ui="enabled: false"
         loading-screen="enabled: false">
 
         <a-assets timeout="15000"></a-assets>
 
-        <!-- Hiro Marker -->
         <a-marker preset="hiro" smooth="true" smoothCount="5" smoothTolerance="0.05" smoothThreshold="5">
 
-            <!-- 1. Torus Knot - floating & rotating -->
-            <a-torus-knot position="-1 0.5 0" scale="0.25 0.25 0.25" color="#FF3366" radius="0.5" radius-tubular="0.1"
-                p="2" q="3" material="metalness: 0.6; roughness: 0.2;"
+            <!-- Torus Knot -->
+            <a-torus-knot position="-1 0.5 0" scale="0.25 0.25 0.25" color="#FF3366"
+                radius="0.5" radius-tubular="0.1" p="2" q="3"
+                material="metalness: 0.6; roughness: 0.2;"
                 animation__rotate="property: rotation; to: 360 360 0; loop: true; dur: 8000; easing: linear"
                 animation__float="property: position; to: -1 0.8 0; dir: alternate; loop: true; dur: 2000; easing: easeInOutSine">
             </a-torus-knot>
 
-            <!-- 2. Icosahedron - pulsing & spinning -->
+            <!-- Icosahedron -->
             <a-icosahedron position="1 0.5 0" scale="0.4 0.4 0.4" color="#00E5FF"
                 material="metalness: 0.3; roughness: 0.4;"
                 animation__rotate="property: rotation; to: 0 -360 0; loop: true; dur: 6000; easing: linear"
                 animation__pulse="property: scale; to: 0.5 0.5 0.5; dir: alternate; loop: true; dur: 1500; easing: easeInOutQuad">
             </a-icosahedron>
 
-            <!-- 3. Cylinder - bouncing & spinning -->
-            <a-cylinder position="0 0.1 1" scale="0.3 0.3 0.3" color="#FFC107" radius="0.5" height="1"
+            <!-- Cylinder -->
+            <a-cylinder position="0 0.1 1" scale="0.3 0.3 0.3" color="#FFC107"
+                radius="0.5" height="1"
                 material="metalness: 0.8; roughness: 0.1;"
                 animation__bounce="property: position; to: 0 0.6 1; dir: alternate; loop: true; dur: 1000; easing: easeInOutCubic"
                 animation__spin="property: rotation; to: 90 360 0; loop: true; dur: 4000; easing: linear">
             </a-cylinder>
 
-            <!-- Text label -->
-            <a-text value="khalid bawidan" position="0 1.5 -0.5" rotation="-90 0 0" align="center" color="#FFFFFF"
-                scale="1.2 1.2 1.2" font="kelsonsans"
+            <!-- Text -->
+            <a-text value="khalid bawidan" position="0 1.5 -0.5" rotation="-90 0 0"
+                align="center" color="#FFFFFF" scale="1.2 1.2 1.2" font="kelsonsans"
                 animation__fade="property: opacity; from: 0.5; to: 1; dir: alternate; loop: true; dur: 2000; easing: easeInOutSine">
             </a-text>
 
