@@ -4,66 +4,87 @@
 <head>
     <meta charset="UTF-8">
     <meta name="author" content="khalid bawidan">
+
+    <!-- Mobile viewport - critical for camera to fill screen properly -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- iOS Safari full-screen camera support -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+
     <title>WebAR Experience | khalid bawidan</title>
     <link rel="stylesheet" href="style.css">
 
-    <!-- A-Frame and AR.js Core Libraries -->
+    <!--
+        IMPORTANT - Library versions:
+        - A-Frame 1.4.2 (stable, widely compatible)
+        - AR.js 3.4.5 pinned via jsDelivr (no "master" branch = no random breakage)
+    -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/aframe/build/aframe-ar.js"></script>
 </head>
 
 <body>
-    <!-- Main AR Scene -->
-    <a-scene embedded
-        arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3; sourceWidth: 1280; sourceHeight: 960; displayWidth: 1280; displayHeight: 960;"
-        renderer="logarithmicDepthBuffer: true; colorManagement: true;" vr-mode-ui="enabled: false">
+
+    <!--
+        KEY FIXES applied to a-scene:
+        1. detectionMode: mono  → correct for pattern-based Hiro marker
+        2. trackingMethod: best → auto-picks best method per device
+        3. antialias: false     → big performance boost on mobile (prevents black screen from GPU overload)
+        4. No sourceWidth/Height → let the browser pick the best resolution it can handle
+        5. loading-screen disabled → avoids hang on some mobile browsers
+    -->
+    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono; trackingMethod: best;"
+        renderer="antialias: false; logarithmicDepthBuffer: true; colorManagement: true;" vr-mode-ui="enabled: false"
+        loading-screen="enabled: false">
 
         <!-- Asset Management -->
-        <a-assets>
+        <a-assets timeout="10000">
             <a-mixin id="glass"
-                material="color: #ffffff; transparent: true; opacity: 0.5; roughness: 0.1; metalness: 0.5;"></a-mixin>
+                material="color: #ffffff; transparent: true; opacity: 0.5; roughness: 0.1; metalness: 0.5;">
+            </a-mixin>
         </a-assets>
 
-        <!-- Hiro Marker Setup -->
-        <a-marker preset="hiro" smooth="true" smoothCount="10" smoothTolerance="0.01" smoothThreshold="5">
+        <!-- Hiro Marker -->
+        <a-marker preset="hiro" smooth="true" smoothCount="5" smoothTolerance="0.05" smoothThreshold="5">
 
-            <!-- 1. Floating & Rotating Torus Knot -->
+            <!-- 1. Torus Knot - floating & rotating -->
             <a-torus-knot position="-1 0.5 0" scale="0.25 0.25 0.25" color="#FF3366" radius="0.5" radius-tubular="0.1"
                 p="2" q="3" material="metalness: 0.6; roughness: 0.2;"
                 animation__rotate="property: rotation; to: 360 360 0; loop: true; dur: 8000; easing: linear"
                 animation__float="property: position; to: -1 0.8 0; dir: alternate; loop: true; dur: 2000; easing: easeInOutSine">
             </a-torus-knot>
 
-            <!-- 2. Pulsing Icosahedron -->
+            <!-- 2. Icosahedron - pulsing & spinning -->
             <a-icosahedron position="1 0.5 0" scale="0.4 0.4 0.4" color="#00E5FF"
                 material="metalness: 0.3; roughness: 0.4;"
                 animation__rotate="property: rotation; to: 0 -360 0; loop: true; dur: 6000; easing: linear"
                 animation__pulse="property: scale; to: 0.5 0.5 0.5; dir: alternate; loop: true; dur: 1500; easing: easeInOutQuad">
             </a-icosahedron>
 
-            <!-- 3. Bouncing Cylinder -->
+            <!-- 3. Cylinder - bouncing & spinning -->
             <a-cylinder position="0 0.1 1" scale="0.3 0.3 0.3" color="#FFC107" radius="0.5" height="1"
                 material="metalness: 0.8; roughness: 0.1;"
                 animation__bounce="property: position; to: 0 0.6 1; dir: alternate; loop: true; dur: 1000; easing: easeInOutCubic"
                 animation__spin="property: rotation; to: 90 360 0; loop: true; dur: 4000; easing: linear">
             </a-cylinder>
 
-            <!-- Typographic Element -->
+            <!-- Text label -->
             <a-text value="khalid bawidan" position="0 1.5 -0.5" rotation="-90 0 0" align="center" color="#FFFFFF"
                 scale="1.2 1.2 1.2" font="kelsonsans"
                 animation__fade="property: opacity; from: 0.5; to: 1; dir: alternate; loop: true; dur: 2000; easing: easeInOutSine">
             </a-text>
 
-            <!-- Dynamic Lighting for Composition rendering -->
+            <!-- Lighting -->
             <a-entity light="type: directional; color: #FFF; intensity: 0.8" position="-1 2 1"></a-entity>
             <a-entity light="type: ambient; color: #A8A8A8"></a-entity>
 
         </a-marker>
 
-        <!-- Camera Setup -->
         <a-entity camera></a-entity>
     </a-scene>
+
 </body>
 
 </html>
