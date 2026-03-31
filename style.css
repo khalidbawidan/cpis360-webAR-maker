@@ -1,56 +1,155 @@
-/* style.css — Author: khalid bawidan */
-
-/* ── Reset ─────────────────────────────────────────────── */
-*, *::before, *::after {
+/* Modern CSS Reset */
+* {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
-html, body {
+body {
+    background-color: #000; /* Fallback before camera completely loads */
+    margin: 0;
+    overflow: hidden;
+}
+
+/* 
+    =======================================
+    Glassmorphism UI Overlay 
+    Sits gracefully on top of the camera feed
+    =======================================
+*/
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 9999; /* This must always be above AR.js elements */
+    transition: opacity 0.5s ease;
+    padding: 20px;
+}
+
+.glass-panel {
+    background: rgba(255, 255, 255, 0.1);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    padding: 40px 30px;
+    text-align: center;
+    color: white;
+    max-width: 400px;
+    width: 100%;
+    box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+    direction: rtl; /* For perfect Arabic text alignment */
+}
+
+.glass-panel h1 {
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 5px;
+    /* Beautiful Text Gradient */
+    background: linear-gradient(135deg, #00E5FF, #FF3366);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.glass-panel > p {
+    font-size: 0.95rem;
+    color: #E2E2E2;
+    margin-bottom: 25px;
+}
+
+.instructions {
+    text-align: right;
+    background: rgba(0,0,0,0.25);
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 30px;
+}
+
+.instructions p {
+    margin-bottom: 12px;
+    font-size: 1.05rem;
+    line-height: 1.5;
+    color: #F8F8F8;
+}
+.instructions p:last-child {
+    margin-bottom: 0;
+}
+
+/* 
+    =======================================
+    Premium Glow Button Styling
+    =======================================
+*/
+.glow-on-hover {
+    width: 100%;
+    height: 55px;
+    border: none;
+    outline: none;
+    color: #fff;
+    background: linear-gradient(135deg, #00E5FF, #FF3366);
+    cursor: pointer;
+    position: relative;
+    z-index: 0;
+    border-radius: 25px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    font-family: inherit;
+    transition: transform 0.2s;
+    letter-spacing: 0.5px;
+}
+
+.glow-on-hover:active {
+    transform: scale(0.96);
+}
+
+.glow-on-hover:before {
+    content: '';
+    background: linear-gradient(45deg, #ff0000, #ff7300, #fffb00, #48ff00, #00ffd5, #002bff, #7a00ff, #ff00c8, #ff0000);
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    background-size: 400%;
+    z-index: -1;
+    filter: blur(10px);
+    width: calc(100% + 4px);
+    height: calc(100% + 4px);
+    animation: glowing 20s linear infinite;
+    opacity: 0;
+    transition: opacity .3s ease-in-out;
+    border-radius: 25px;
+}
+
+.glow-on-hover:hover:before {
+    opacity: 1;
+}
+
+.glow-on-hover:after {
+    z-index: -1;
+    content: '';
+    position: absolute;
     width: 100%;
     height: 100%;
-    overflow: hidden;
-    background: #000;
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    user-select: none;
+    background: linear-gradient(135deg, #00E5FF, #FF3366);
+    left: 0;
+    top: 0;
+    border-radius: 25px;
 }
 
-/* ── Hide A-Frame default UI ────────────────────────────── */
-.a-enter-vr,
-.a-enter-ar,
-.a-orientation-modal {
+@keyframes glowing {
+    0% { background-position: 0 0; }
+    50% { background-position: 400% 0; }
+    100% { background-position: 0 0; }
+}
+
+/* Hide AR.js generated VR Button */
+.a-enter-vr {
     display: none !important;
-}
-
-/* ── Force video fullscreen (JS reinforces with !important) */
-video {
-    position:   fixed         !important;
-    top:        0             !important;
-    left:       0             !important;
-    width:      100vw         !important;
-    height:     100vh         !important;
-    object-fit: cover         !important;
-    z-index:    0             !important;
-    transform:  none          !important;
-}
-
-/* ── Canvas on top, must be transparent (alpha:true in HTML) */
-canvas {
-    position: fixed  !important;
-    top:      0      !important;
-    left:     0      !important;
-    width:    100vw  !important;
-    height:   100vh  !important;
-    z-index:  1      !important;
-}
-
-/* ── Scene container full screen ────────────────────────── */
-a-scene {
-    position: fixed  !important;
-    top:      0      !important;
-    left:     0      !important;
-    width:    100vw  !important;
-    height:   100vh  !important;
 }
