@@ -1,50 +1,60 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="author" content="khalid bawidan">
-
-    <!-- Mobile viewport - critical for camera to fill screen properly -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <!-- iOS Safari full-screen camera support -->
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="mobile-web-app-capable" content="yes">
-
     <title>WebAR Experience | khalid bawidan</title>
     <link rel="stylesheet" href="style.css">
 
     <!--
-        IMPORTANT - Library versions:
-        - A-Frame 1.4.2 (stable, widely compatible)
-        - AR.js 3.4.5 pinned via jsDelivr (no "master" branch = no random breakage)
+        A-Frame 1.4.2  +  AR.js 3.4.5 (raw.githack — most reliable host for AR.js)
+        jsdelivr sometimes serves a broken/cached bundle; raw.githack is safer.
     -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/aframe/build/aframe-ar.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/3.4.5/aframe/build/aframe-ar.js"></script>
+
+    <script>
+        /*
+         * MOBILE CAMERA FIX
+         * AR.js injects a <video> element. On many Android/iOS devices it
+         * does not set "playsinline" which causes the camera to stall or
+         * show a black screen (especially on iOS Safari).
+         * We patch it immediately after the DOM is ready.
+         */
+        document.addEventListener('DOMContentLoaded', function () {
+            var scene = document.querySelector('a-scene');
+
+            scene.addEventListener('loaded', function () {
+                var video = document.querySelector('video');
+                if (video) {
+                    video.setAttribute('playsinline', '');
+                    video.setAttribute('webkit-playsinline', '');
+                    video.setAttribute('muted', '');
+                    video.play().catch(function(e) { console.warn('Video play failed:', e); });
+                }
+            });
+        });
+    </script>
 </head>
 
 <body>
-
     <!--
-        KEY FIXES applied to a-scene:
-        1. detectionMode: mono  → correct for pattern-based Hiro marker
-        2. trackingMethod: best → auto-picks best method per device
-        3. antialias: false     → big performance boost on mobile (prevents black screen from GPU overload)
-        4. No sourceWidth/Height → let the browser pick the best resolution it can handle
-        5. loading-screen disabled → avoids hang on some mobile browsers
+        Minimal arjs config for Hiro (pattern marker):
+        - No detectionMode → default handles pattern markers correctly
+        - No sourceWidth/Height → device chooses what it can support
+        - debugUIEnabled: false → clean screen
     -->
-    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono; trackingMethod: best;"
-        renderer="antialias: false; logarithmicDepthBuffer: true; colorManagement: true;" vr-mode-ui="enabled: false"
+    <a-scene
+        embedded
+        arjs="sourceType: webcam; debugUIEnabled: false;"
+        renderer="antialias: false; logarithmicDepthBuffer: true;"
+        vr-mode-ui="enabled: false"
         loading-screen="enabled: false">
 
-        <!-- Asset Management -->
-        <a-assets timeout="10000">
-            <a-mixin id="glass"
-                material="color: #ffffff; transparent: true; opacity: 0.5; roughness: 0.1; metalness: 0.5;">
-            </a-mixin>
-        </a-assets>
+        <a-assets timeout="15000"></a-assets>
 
         <!-- Hiro Marker -->
         <a-marker preset="hiro" smooth="true" smoothCount="5" smoothTolerance="0.05" smoothThreshold="5">
@@ -84,7 +94,5 @@
 
         <a-entity camera></a-entity>
     </a-scene>
-
 </body>
-
 </html>
